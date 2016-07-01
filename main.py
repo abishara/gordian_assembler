@@ -49,9 +49,9 @@ def get_stages(options):
       stages["haplotype_reads"] = haplotype_reads.HaplotypeReadsStep
       stages["collect_bin_reads"] = collect_reads.CollectBinReadsStep
       stages["assemble_bins"] = assemble_bins.AssembleBinnedStep
-      stages["group_bins"] = group_bins.GroupBinsStep
-      stages["collect_group_reads"] = collect_reads.CollectGroupReadsStep
-      stages["assemble_groups"] = assemble_groups.AssembleGroupsStep
+      #stages["group_bins"] = group_bins.GroupBinsStep
+      #stages["collect_group_reads"] = collect_reads.CollectGroupReadsStep
+      #stages["assemble_groups"] = assemble_groups.AssembleGroupsStep
     elif options.pipe_type == 'reads':
       stages["assemble_reads"] = assemble_bins.AssembleSpecReadsStep
     else:
