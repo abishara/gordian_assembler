@@ -1,10 +1,12 @@
 import os
 import pysam
 import subprocess
-from ..assembler_tools.haplotyper import haplotyper
+from itertools import chain
 
 from .step import StepChunk
 from ..mlib import util
+
+from ..assembler_tools.haplotyper import haplotyper
 
 wd = os.path.dirname(os.path.abspath(__file__))
 haplotyperbin_path = os.path.join(
@@ -16,15 +18,15 @@ assert os.path.isfile(haplotyperbin_path)
 
 class HaplotypeReadsStep(StepChunk):
 
-  @staticmethod
-  def get_steps(options):
+  @classmethod
+  def get_steps(cls, options):
     for ctg, b, e in util.get_genome_partitions(
       options.ref_fasta,
       options.genome_window_size,
       options.genome_step_size,
     ):
       if not options.regions or len(options.regions[ctg].find(b,e)) > 0:
-        yield HaplotypeReadsStep(options, ctg, b, e)
+        yield cls(options, ctg, b, e)
         #break
 
   def outpaths(self, final=False):

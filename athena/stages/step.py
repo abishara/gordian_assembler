@@ -10,10 +10,10 @@ from ..mlib import log
 class StepChunk(object):
     __metaclass__ = abc.ABCMeta
 
-    @staticmethod
-    def get_steps(options):
+    @classmethod
+    def get_steps(cls, options):
         """ """
-        raise Exception("this abstract staticmethod needs to be instantiated by subclasses")
+        raise Exception("this abstract classmethod needs to be instantiated by subclasses")
 
     @abc.abstractmethod
     def __init__(self, options, **kwdargs):

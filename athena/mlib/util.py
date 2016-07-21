@@ -142,44 +142,75 @@ def fa_iter(fa):
       #yield (qname, txt)
   raise StopIteration
 
+TenXFastqEntry_t = namedtuple(
+  'TenXFastqEntry_t',
+  [
+    'qname',
+    'seq1',
+    'qual1',
+    'seq2',
+    'qual2',
+    'bcode',
+    'bcodequal',
+    'txt',
+  ]
+)
+
+
 def tenx_fastq_iter(fq, fmt='raw'):
   assert fmt in [
     'raw',
     'fa',
     'fa-bcode',
+    'entries',
   ]
   assert os.path.isfile(fq)
   open_f = open
   if fq.endswith('.gz'):
     open_f = gzip.open
   with open_f(fq) as f:
+    for e in  f_iter_tenx(f, fmt):
+      yield e
 
-    for fields in grouped(f, 9):
-      bcode = fields[5].strip()
-      if fmt == 'raw':
-        rtxt = ''.join(fields)
-        yield (bcode, rtxt)
-      elif fmt in ['fa', 'fa-bcode']:
-        qname_ln = fields[0]
-        # strip aux fields
-        qname_w = qname_ln.split()[0]
-        # strip /1,/2
-        qname = qname_w.split('/')[0]
-        # strip @
-        assert qname.startswith('@')
-        qname = qname[1:]
+def f_iter_tenx(f, fmt='raw'):
+  for fields in grouped(f, 9):
+    bcode = fields[5].strip()
+    if fmt == 'entries':
+      rtxt = ''.join(fields)
+      yield TenXFastqEntry_t(
+        qname=fields[0].split()[0][1:],
+        seq1=fields[1].strip(),
+        qual1=fields[2].strip(),
+        seq2=fields[3].strip(),
+        qual2=fields[4].strip(),
+        bcode=fields[5].strip(),
+        bcodequal=fields[6].strip(),
+        txt=rtxt,
+      )
+    elif fmt == 'raw':
+      rtxt = ''.join(fields)
+      yield (bcode, rtxt)
+    elif fmt in ['fa', 'fa-bcode']:
+      qname_ln = fields[0]
+      # strip aux fields
+      qname_w = qname_ln.split()[0]
+      # strip /1,/2
+      qname = qname_w.split('/')[0]
+      # strip @
+      assert qname.startswith('@')
+      qname = qname[1:]
 
-        if fmt == 'fa-bcode':
-          header = '>'+bcode+'$'+qname+'\n'
-        else:
-          header = '>'+qname+'\n'
-        rtxt = ''.join([
-          header,
-          fields[1],
-          header,
-          fields[3],
-        ])
-        yield (bcode, rtxt)
+      if fmt == 'fa-bcode':
+        header = '>'+bcode+'$'+qname+'\n'
+      else:
+        header = '>'+qname+'\n'
+      rtxt = ''.join([
+        header,
+        fields[1],
+        header,
+        fields[3],
+      ])
+      yield (bcode, rtxt)
 
   raise StopIteration
 
@@ -191,4 +222,12 @@ def convert_tenx_fq2bcodefa(tenxfq_path, fa_path):
   with open(fa_path, 'w') as f:
     for _, txt in tenx_fastq_iter(tenxfq_path, fmt='fa-bcode'):
       f.write(txt)
+
+def get_fasta_sizes(fa_path):
+  fasta = pysam.FastaFile(fa_path)
+  ctg_size_map = {}
+  for ctg in fasta.references:
+    size = fasta.get_reference_length(ctg)
+    ctg_size_map[ctg] = size
+  return ctg_size_map
 
