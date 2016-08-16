@@ -123,6 +123,7 @@ class RefAsmOptions(Options):
     def required(self):
       return [
         'longranger_bam_path',
+        'longranger_bcbam_path',
         'longranger_vcf_path',
         'longranger_fqs_path',
         'ref_fasta',
@@ -132,8 +133,10 @@ class RefAsmOptions(Options):
     def optional(self):
       return [
         ('regions_bed_path', None),
+
         ('genome_step_size',   200000),
         ('genome_window_size', 250000),
+
         #('genome_step_size',   50000),
         #('genome_window_size', 100000),
       ]

@@ -14,9 +14,12 @@ class ComputeOverlapsStep(haplotype_reads.HaplotypeReadsStep):
   def run(self):
     self.logger.log('determine all vs all bin overlaps')
 
-    binid_bcodes_map = dict(self.get_bins()) 
+    binid_bcodes_map = dict(map(
+      lambda(k, v1, v2): (k, v1),
+      self.get_bins(),
+    ) )
     binid_olaps_map = defaultdict(list)
-    for cbinid, cbcodes in self.get_all_bins(self.options):
+    for cbinid, cbcodes, _ in self.get_all_bins(self.options):
       for binid, bcodes in binid_bcodes_map.items():
         # only compute each comparison once
         if cbinid <= binid:
@@ -40,11 +43,14 @@ class ComputeOverlapsStep(haplotype_reads.HaplotypeReadsStep):
     hapstats_path = hap_step.outpaths()['stats']
     assert os.path.isfile(hapstats_path), "haplotyper not yet run on window {}".format(str(self))
     (cluster_info_map, _) = util.load_pickle(hapstats_path)
+    unassn_bcodes = cluster_info_map[None][1]
     for cidx, info in cluster_info_map.items():
       numreads, bcode_set, _, assm = info
+      # add in unassigned
+      all_bcode_set = unassn_bcodes | bcode_set
       binid = (self.ctg, self.begin, self.end, cidx)
       if assm and cidx != None:
-        yield (binid, bcode_set)
+        yield (binid, bcode_set, all_bcode_set)
 
   @classmethod
   def get_all_bins(cls, options):
@@ -54,8 +60,8 @@ class ComputeOverlapsStep(haplotype_reads.HaplotypeReadsStep):
     for i, step in enumerate(steps):
       if i % mstep == 0:
         print '  - {}/ {}'.format(i, len(steps))
-      for binid, bcodes in step.get_bins():
-        yield binid, bcodes
+      for binid, bcodes, all_bcodes in step.get_bins():
+        yield binid, bcodes, all_bcodes
         
   def get_overlaps(self):
     stats_path = self.outpaths()['stats']

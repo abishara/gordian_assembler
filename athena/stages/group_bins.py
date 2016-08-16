@@ -46,14 +46,17 @@ class GroupBinsStep(StepChunk):
     self.logger.log('read in computed overlaps and bin overlap graph')
     G = nx.Graph()
     binid_bcodes_map = {}
-    for binid, bcode_set in ComputeOverlapsStep.get_all_bins(self.options):
+    for binid, bcode_set, all_bcode_set in ComputeOverlapsStep.get_all_bins(self.options):
       G.add_node(binid)
-      binid_bcodes_map[binid] = bcode_set
+      binid_bcodes_map[binid] = all_bcode_set
+      #binid_bcodes_map[binid] = bcode_set
 
     for binid_olaps_map in ComputeOverlapsStep.get_all_overlaps(self.options):
       for binid, olaps in binid_olaps_map.items():
         for cbinid, olap in olaps:
-          G.add_edge(binid, cbinid, olap=olap)
+          # FIXME remove
+          pass
+          #G.add_edge(binid, cbinid, olap=olap)
 
     self.logger.log('  - done')
     self.logger.log('  - {} bin nodes and {} overlap edges'.format(
@@ -142,9 +145,16 @@ class GroupBinsStep(StepChunk):
       if len(window_counts) > 2 or len(dup_windows) > 0:
         break_nodes.add(bid1)
       for bid2, w in n_window_map.items():
+        if bid1 < bid2:
+          continue
         olap = G[bid1][bid2]['olap']
         if w not in dup_windows:
           H.add_edge(bid1, bid2, olap=olap)
+          self.logger.log('  conn edge {} to {}, olap {}'.format(
+            get_bin_str(bid1),
+            get_bin_str(bid2),
+            olap,
+          ))
         else:
           dup_edges.add((bid1, bid2))
           self.logger.log('  dup edge {} to {}, olap {}'.format(
@@ -160,11 +170,15 @@ class GroupBinsStep(StepChunk):
     ccs = nx.connected_component_subgraphs(H)
     seen_set = set()
     groups = []
+    mgroup = set()
+    mbcodes = set()
     for gid, cc in enumerate(sorted(ccs,key=len,reverse=True)):
       group = set(cc.nodes())
+      mgroup |= group
       bcodes = set()
       for bid in group:
         bcodes |= binid_bcodes_map[bid]
+      mbcodes |= bcodes
 
       assert len(seen_set & group) == 0, "node duplicated in subgraph"
       seen_set |= group
@@ -174,6 +188,12 @@ class GroupBinsStep(StepChunk):
 
       groups.append((gid, group, bcodes))
 
+    groups.append((999, mgroup, mbcodes))
+    for gid, mgroup, mbcodes in groups:
+      print 'gid: {}, size: {}, bcodes: {}'.format(
+        gid,
+        len(mgroup), len(mbcodes),
+      )
     util.write_pickle(self.options.groups_pickle_path, groups)
 
     self.logger.log('done')

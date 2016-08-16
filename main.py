@@ -13,6 +13,7 @@ from athena.stages import compute_overlaps
 from athena.stages import group_bins
 from athena.stages import index_reads
 from athena.stages import assemble_groups
+from athena.stages import compute_stats
 
 #from athena.stages import index_reads
 #from athena.stages import assemble_bins
@@ -50,11 +51,14 @@ def get_stages(options):
     stages = collections.OrderedDict()
 
     if options.pipe_type == 'ref-asm':
+      stages["index_bam_reads"] = index_reads.IndexBCBamStep
       stages["haplotype_reads"] = haplotype_reads.HaplotypeReadsStep
       stages["compute_overlaps"] = compute_overlaps.ComputeOverlapsStep
       stages["group_bins"] = group_bins.GroupBinsStep
-      stages["index_reads"] = index_reads.IndexReadsStep
+      #stages["index_reads"] = index_reads.IndexReadsStep
+      #stages["index_bam_reads"] = index_reads.IndexBCBamStep
       stages["assemble_groups"] = assemble_groups.AssembleGroupsStep
+      stages["compute_stats"] = compute_stats.ComputeStatsStep
     #elif options.pipe_type == 'reads':
     #  stages["assemble_reads"] = assemble_bins.AssembleSpecReadsStep
     else:
