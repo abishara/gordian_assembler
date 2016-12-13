@@ -8,6 +8,7 @@ import util
 class BCBamIndex(object):
 
   file_suffix = '.bamidx.p'
+  #file_suffix = '.bamidx2.p'
 
   @staticmethod
   def get_index_path(bam_path):

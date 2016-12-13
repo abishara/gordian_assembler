@@ -41,7 +41,11 @@ class ComputeOverlapsStep(haplotype_reads.HaplotypeReadsStep):
       self.end,
     )
     hapstats_path = hap_step.outpaths()['stats']
-    assert os.path.isfile(hapstats_path), "haplotyper not yet run on window {}".format(str(self))
+    # FIXME remove
+    #assert os.path.isfile(hapstats_path), "haplotyper not yet run on window {}".format(str(self))
+    if not os.path.isfile(hapstats_path):
+      raise StopIteration
+    
     (cluster_info_map, _) = util.load_pickle(hapstats_path)
     unassn_bcodes = cluster_info_map[None][1]
     for cidx, info in cluster_info_map.items():
@@ -65,7 +69,10 @@ class ComputeOverlapsStep(haplotype_reads.HaplotypeReadsStep):
         
   def get_overlaps(self):
     stats_path = self.outpaths()['stats']
-    assert os.path.isfile(stats_path), "overlaps not yet run on window {}".format(str(self))
+    # FIXME remove
+    #assert os.path.isfile(stats_path), "overlaps not yet run on window {}".format(str(self))
+    if not os.path.isfile(stats_path):
+      return {}
     binid_olaps_map = util.load_pickle(stats_path)
     return binid_olaps_map
 

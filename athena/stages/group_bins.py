@@ -188,7 +188,7 @@ class GroupBinsStep(StepChunk):
 
       groups.append((gid, group, bcodes))
 
-    groups.append((999, mgroup, mbcodes))
+    #groups.append((999, mgroup, mbcodes))
     for gid, mgroup, mbcodes in groups:
       print 'gid: {}, size: {}, bcodes: {}'.format(
         gid,

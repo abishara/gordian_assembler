@@ -286,6 +286,7 @@ class AssembleGroupsStep(AssembleBaseStep):
       self.bins,
       readsbam_path,
       filtbam_path,
+      filter_type=self.options.read_filter_type,
     )
     cmd = 'samtools index {}'.format(filtbam_path)
     subprocess.check_call(cmd, shell=True)
@@ -380,16 +381,19 @@ class AssembleGroupsStep(AssembleBaseStep):
 --style={}'''.format(
         supernovabin_path,
         'run/outs/assembly',
-        'supernova',
+        'supernova-pre',
         #'megabubbles',
         'pseudohap',
       )
       subprocess.check_call(cmd, shell=True)
-    scaff_path = os.path.join(
-      supernova_asmdir_path,
-      'supernova.fasta',
+    scaffpre_path = os.path.join(supernova_asmdir_path, 'supernova-pre.fasta')
+    assert os.path.isfile(scaffpre_path), "supernova contigs not generated"
+    scaff_path = os.path.join(supernova_asmdir_path, 'supernova.fasta')
+    tag_fasta(
+      scaffpre_path,
+      scaff_path,
+      'g{}'.format(self.gid),
     )
-    assert os.path.isfile(scaff_path), "supernova contigs not generated"
     contig_path = os.path.join(
       supernova_asmdir_path,
       'supernova.contig.fasta',
@@ -549,6 +553,7 @@ def get_filtered_bam(
   bins,
   inbam_path,
   outbam_path,
+  filter_type='strict',
 ):
 
   SLACK_LEN = 10000000
@@ -584,12 +589,18 @@ def get_filtered_bam(
     if read.is_unmapped:
       fhandle_out.write(read)
       continue
+
     ctg = fhandle.getrname(read.tid)
-    # save any reads within 10mb of target
-    hits = intervals_map[ctg].find(read.pos, read.aend)
-    if len(hits) > 0:
+    if filter_type == 'strict':
+      # save only reads mapping within the target
+      hits = intervals_map[ctg].find(read.pos, read.aend)
+      if len(hits) > 0:
+        fhandle_out.write(read)
+        continue
+    elif filter_type == 'none':
       fhandle_out.write(read)
-      continue
+    else:
+      raise Exception("Filter type not implemented yet")
 
     ## if any remaining read is mq60 and its neighborhood coverage is < 4x
     ## then filter
@@ -617,5 +628,19 @@ def split_scaffs(scaff_path, contig_path):
           fout.write('>{}.{}\n'.format(scaff, cidx))
           fout.write('{}\n'.format(subseq))
           cidx +=1
+  return
+
+def tag_fasta(infa_path, outfa_path, uid):
+  with open(infa_path) as fin, \
+       open(outfa_path, 'w') as fout:
+    for line in fin:
+      if not line.startswith('>'):
+        fout.write(line)
+        continue
+
+      words = line.split()
+      words[0] += '.' + uid
+      nheader = ' '.join(words) + '\n'
+      fout.write(nheader)
   return
 

@@ -132,6 +132,8 @@ class RefAsmOptions(Options):
     @classproperty
     def optional(self):
       return [
+        ('read_filter_type', 'strict'),
+
         ('regions_bed_path', None),
 
         ('genome_step_size',   200000),
@@ -144,6 +146,13 @@ class RefAsmOptions(Options):
     def __init__(self, options_path, debug=False):
 
         super(RefAsmOptions, self).__init__(options_path)
+
+        # checking
+        assert self.read_filter_type in [
+          'none',
+          'strict',
+          'soft-1',
+        ]
 
         self.binaries = None
         self._regions = None
