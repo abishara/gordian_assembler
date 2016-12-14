@@ -6,18 +6,11 @@ import logging
 from athena.mlib import util
 
 from athena import pipeline
-from athena.options import RefAsmOptions, ReadsOptions, MetaAsmOptions
+from athena.options import Options
 
-from athena.stages import haplotype_reads
-from athena.stages import compute_overlaps
-from athena.stages import group_bins
 from athena.stages import index_reads
-from athena.stages import assemble_groups
-from athena.stages import compute_stats
-
-#from athena.stages import index_reads
-#from athena.stages import assemble_bins
-#from athena.stages import assemble_groups
+from athena.stages import phase_barcodes
+from athena.stages import assemble_bins
 
 logging.basicConfig(format='%(message)s', level=logging.DEBUG)
 
@@ -50,17 +43,9 @@ def clean(options):
 def get_stages(options):
     stages = collections.OrderedDict()
 
-    if options.pipe_type == 'ref-asm':
-      stages["index_bam_reads"] = index_reads.IndexBCBamStep
-      #stages["haplotype_reads"] = haplotype_reads.HaplotypeReadsStep
-      stages["compute_overlaps"] = compute_overlaps.ComputeOverlapsStep
-      stages["group_bins"] = group_bins.GroupBinsStep
-      stages["assemble_groups"] = assemble_groups.AssembleGroupsStep
-      stages["compute_stats"] = compute_stats.ComputeStatsStep
-    #elif options.pipe_type == 'reads':
-    #  stages["assemble_reads"] = assemble_bins.AssembleSpecReadsStep
-    else:
-      raise Exception("Pipeline not implemented yet")
+    stages["index_reads"]  = index_reads.IndexReadsStep
+    stages["phase_barcodes"] = phase_barcodes.PhaseBarcodesStep
+    stages["assemble_bins"] = assemble_bins.AssembleBinsStep
 
     return stages
 
@@ -77,42 +62,24 @@ def clean_up():
   )
   map(lambda(f): os.remove(f), junk)
 
-def main(argv):
+def main():
   """
   1. process command-line arguments
-  3. run
+  2. run
   """
 
   help_str = '''
-  usage: athena.py <path/to/config.json> [pipeline]
-
-  pipeline: {ref-asm, reads, meta-asm}, default: ref-asm
+  usage: athena.py <path/to/config.json>
 
   NOTE: dirname(config.json) specifies root output directory
   '''
+  argv = sys.argv
   if len(argv) != 2 and len(argv) != 3:
     print help_str
     sys.exit(1)
 
   config_path = argv[1]
-  pipe_type = 'ref-asm'
-  if len(argv) == 3:
-    pipe_type = argv[2]
-    if pipe_type not in [
-      'ref-asm',
-      'reads',
-      'meta-asm',
-    ]:
-      print >> sys.stderr, 'error: incorrect pipeline specified'
-      sys.exit(2)
-
-  # load config json
-  options_cls = {
-    'ref-asm' : RefAsmOptions,
-    'reads'   : ReadsOptions,
-    'meta-asm': MetaAsmOptions,
-  }[pipe_type]
-  options = options_cls.deserialize(config_path)
+  options = Options.deserialize(config_path)
 
   #clean(options)
   run(options)
@@ -120,5 +87,5 @@ def main(argv):
   clean_up()
 
 if __name__ == '__main__':
-  main(sys.argv)
+  main()
 

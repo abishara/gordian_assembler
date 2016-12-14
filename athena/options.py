@@ -42,18 +42,23 @@ class Options(object):
 
     @classproperty
     def required(self):
-        """ options required to be specified """
-        raise Exception("Not implemented yet")
+      return [
+        'bam_path',
+        'vcf_path',
+        'fq_path',
+      ]
 
     @classproperty
     def optional(self):
-        """ options that are optional to specify. tuple of (key, default
-        value) """
-        raise Exception("Not implemented yet")
+      return [
+      ]
 
     def __init__(self, options_path, **kwdargs):
         self.options_path = options_path
-        self._output_dir = os.path.dirname(self.options_path)
+        if os.path.dirname(options_path) == '':
+          self._output_dir = os.getcwd()
+        else:
+          self._output_dir = os.path.dirname(self.options_path)
 
         # set required attributes to None
         for opt in self.required:
@@ -103,168 +108,12 @@ class Options(object):
     def log_dir(self):
         return os.path.join(self.output_dir, "logs")
 
-    @abc.abstractmethod
-    def __getstate__(self):
-        """
-        allows pickling of Options instances, necessary for ipyparallel
-        """
-        state = self.__dict__.copy()
-        return state
-
-#--------------------------------------------------------------------------
-# ref assembly options
-#--------------------------------------------------------------------------
-class RefAsmOptions(Options):
-      
-    @classproperty
-    def pipe_type(self): return 'ref-asm'
-
-    @classproperty
-    def required(self):
-      return [
-        'longranger_bam_path',
-        'longranger_bcbam_path',
-        'longranger_vcf_path',
-        'longranger_fqs_path',
-        'ref_fasta',
-      ]
-
-    @classproperty
-    def optional(self):
-      return [
-        ('read_filter_type', 'strict'),
-
-        ('regions_bed_path', None),
-
-        ('genome_step_size',   200000),
-        ('genome_window_size', 250000),
-
-        #('genome_step_size',   50000),
-        #('genome_window_size', 100000),
-      ]
-
-    def __init__(self, options_path, debug=False):
-
-        super(RefAsmOptions, self).__init__(options_path)
-
-        # checking
-        assert self.read_filter_type in [
-          'none',
-          'strict',
-          'soft-1',
-        ]
-
-        self.binaries = None
-        self._regions = None
-
     @property
-    def regions(self):
-        if self._regions == None and self.regions_bed_path:
-          self._regions = util.load_bed(self.regions_bed_path)
-        return self._regions
+    def phased_bins_path(self):
+        return os.path.join(self.results_dir, "phased_bins.p")
 
-    @property
-    def bins_pickle_path(self): 
-        return os.path.join(self.working_dir, 'bins.p')
-
-    @property
-    def groups_pickle_path(self): 
-        return os.path.join(self.working_dir, 'groups.p')
-    @property
-    def groups2_pickle_path(self): 
-        return os.path.join(self.working_dir, 'groups2.p')
-    
-    def get_group_dir(self, gid, final=False):
-      return os.path.join(
-        self.working_dir if not final else self.results_dir,
-        'groups',
-        'group.{}'.format(gid),
-      )
-
-    def get_group_fq_dir(self, gid):
-      return os.path.join(self.get_group_dir(gid), 'fqs')
-    def get_group_asm_dir(self, gid):
-      return os.path.join(self.get_group_dir(gid), 'asm')
-
-    def get_bin_dir(self, binid, final=False):
-      ctg, b, e, cidx = binid
-      return os.path.join(
-        self.working_dir if not final else self.results_dir,
-        'bins',
-        '{}.{}-{}.c{}'.format(ctg, b, e, cidx),
-      )
-      
-    def get_bin_fq_dir(self, binid):
-      return os.path.join(self.get_bin_dir(binid), 'fqs')
-    def get_bin_asm_dir(self, binid):
-      return os.path.join(self.get_bin_dir(binid), 'asm')
-
-    def binary(self, name):
-        """
-        Checks to see if a path has been specified for an external binary,
-        otherwise just return the name of the binary to try running it
-        if it's in $PATH
-        """
-        if self.binaries is not None:
-            return self.binaries.get(name, name)
-        return name
-
-    @property
-    def debug(self):
-        return self._debug
-    
-    @debug.setter
-    def debug(self, mode=True):
-        self._reference = None
-        self._debug = mode
-
-    def __str__(self):
-        d = self.serialize()
-        d["debug"] = self.debug
-        return json.dumps(d, sort_keys=True, indent=4)
-
-    def __getstate__(self):
-        """
-        allows pickling of Options instances, necessary for ipyparallel
-        """
-        state = self.__dict__.copy()
-        state["_regions"] = None
-
-        return state
-
-#--------------------------------------------------------------------------
-# reads options
-#--------------------------------------------------------------------------
-class ReadsOptions(Options):
-
-    @classproperty
-    def pipe_type(self): return 'reads'
-
-    @classproperty
-    def required(self):
-      return ['tenxfq_path']
-
-    @classproperty
-    def optional(self):
-      return []
-
-    #def __init__(self, options_path, debug=False):
-    #    super(RefAsmOptions, self).__init__(options_path, debug)
-
-    def get_bin_dir(self, binid, final=False):
-      assert binid == None
-      return os.path.join(
-        self.working_dir if not final else self.results_dir,
-        'bin',
-      )
-      
-    def get_bin_fq_dir(self, binid):
-      return os.path.join(self.get_bin_dir(binid), 'fqs')
-    def get_bin_asm_dir(self, binid):
-      return os.path.join(self.get_bin_dir(binid), 'asm')
-
-    def __str__(self):
-        return self.__class__.__name__
+    def get_bin_scratch(self, idx):
+      return os.path.join(self.working_dir, 'c{}'.format(idx))
 
     def __getstate__(self):
         """
@@ -272,10 +121,4 @@ class ReadsOptions(Options):
         """
         state = self.__dict__.copy()
         return state
-
-#--------------------------------------------------------------------------
-# metagenome assembly options
-#--------------------------------------------------------------------------
-class MetaAsmOptions(Options):
-  pass
 

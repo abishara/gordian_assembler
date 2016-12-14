@@ -1,30 +1,19 @@
-import abc
 import os
-import pysam
-import subprocess
-from collections import defaultdict
-import glob
-
-from ..assembler_tools.haplotyper import haplotyper
 
 from .step import StepChunk
 from ..mlib import util
 from ..mlib.fq_idx import FastqIndex
-from ..mlib.bam_idx import BCBamIndex
 
 class IndexReadsStep(StepChunk):
 
   @staticmethod
   def get_steps(options):
-    # strip over fastqs to load all fq fragments
-    rootfq_path = options.longranger_fqs_path
-    for fq_path in glob.glob(rootfq_path + '/chnk*/files/*fastq*gz'):
-      yield IndexReadsStep(options, fq_path)
+    yield IndexReadsStep(options)
 
   def outpaths(self, final=False):
     paths = {}
     paths['pass.file'] = os.path.join(self.outdir, 'pass')
-    paths['index.file'] = FastqIndex.get_index_path(self.nfq_path)
+    paths['index.file'] = FastqIndex.get_index_path(self.fq_path)
     #paths['shit.file'] = os.path.join(self.outdir, 'shit')
     return paths
  
@@ -36,14 +25,9 @@ class IndexReadsStep(StepChunk):
       str(self),
     )
 
-  def __init__(
-    self,
-    options,
-    fq_path,
-  ):
+  def __init__(self, options):
     self.options = options
-    self.fq_path = fq_path
-    self.nfq_path = fq_path[:-3]
+    self.fq_path = self.options.fq_path
     util.mkdir_p(self.outdir)
 
   def __fqid(self):
@@ -56,52 +40,12 @@ class IndexReadsStep(StepChunk):
     )
 
   def run(self):
-    self.logger.log("paths: {}".format(str(self.outpaths())))
-    self.logger.log('uncompressing fastq')
-    cmd = 'zcat {} > {}'.format(self.fq_path, self.nfq_path)
-    #os.system(cmd)
+    #if self.fq_path.endswith('.gz'):
+    #  cmd = 'zcat {} > {}'.format(self.fq_path, self.nfq_path)
+    #  os.system(cmd)
 
-    self.logger.log('index fastq {}'.format(self.nfq_path))
-    with FastqIndex(self.nfq_path) as idx:
-      pass
-    passfile_path = os.path.join(self.outdir, 'pass')
-    util.touch(passfile_path)
-    self.logger.log('done')
-
-class IndexBCBamStep(StepChunk):
-
-  @staticmethod
-  def get_steps(options):
-    yield IndexBCBamStep(options)
-
-  def outpaths(self, final=False):
-    paths = {}
-    paths['pass.file'] = os.path.join(self.outdir, 'pass')
-    paths['index.file'] = BCBamIndex.get_index_path(self.bam_path)
-    #paths['shit.file'] = os.path.join(self.outdir, 'shit')
-    return paths
- 
-  @property
-  def outdir(self):
-    return os.path.join(
-      self.options.results_dir,
-      str(self),
-    )
-
-  def __init__(
-    self,
-    options,
-  ):
-    self.options = options
-    self.bam_path = self.options.longranger_bcbam_path
-    util.mkdir_p(self.outdir)
-
-  def __str__(self):
-    return '{}'.format(self.__class__.__name__)
-
-  def run(self):
-    self.logger.log('index barcode sorted bam {}'.format(self.bam_path))
-    with BCBamIndex(self.bam_path) as idx:
+    self.logger.log('index fastq {}'.format(self.fq_path))
+    with FastqIndex(self.fq_path) as idx:
       pass
     passfile_path = os.path.join(self.outdir, 'pass')
     util.touch(passfile_path)

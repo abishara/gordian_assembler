@@ -1,6 +1,7 @@
 import os
 import sys
 import cPickle as pickle
+from itertools import groupby
 
 import util
 
@@ -56,16 +57,34 @@ class FastqIndex(object):
   def __build_index__(self):  
     numbytes = 0
     self._bcode_off_map = {}
-    for fq_path in [self.fq_path]:
-      for e in util.tenx_fastq_iter(fq_path, fmt='entries'):
-        if e.bcode not in self._bcode_off_map:
-          self._bcode_off_map[e.bcode] = numbytes
-        numbytes += len(e.txt)
+    num_pe = 0
+
+    assert not self.fq_path.endswith('.gz'), \
+      "gzipped fq not supported"
+    with open(self.fq_path) as f:
+      seen_set = set()
+      for bcode, reads_iter in groupby(
+        util.fastq_iter(f),
+        lambda(x): x[0],
+      ):
+        assert bcode not in seen_set, \
+          "fastq {} NOT in barcode sorted order".format(self.fq_path)
+        seen_set.add(bcode)
+        if bcode not in self._bcode_off_map:
+          self._bcode_off_map[bcode] = numbytes
+        for _, qname, lines in reads_iter:
+          num_pe += 1
+          txt = ''.join(lines)
+          numbytes += len(txt)
 
     print 'writing index for fqs'
     for fq_path in [self.fq_path]:
       print '  -', fq_path
     util.write_pickle(self.index_path, self._bcode_off_map)
+    num_bcodes = len(filter(
+      lambda(b): b.endswith('-1'),
+      self._bcode_off_map.keys(),
+    ))
 
   def __load_index__(self):  
     self._bcode_off_map = util.load_pickle(self.index_path)
@@ -80,8 +99,9 @@ class FastqIndex(object):
     f = self.f_map[self.fq_path]
     f.seek(offset, 0)
 
-    for e in util.f_iter_tenx(f,fmt='entries'):
-      if e.bcode != bcode:
+    for e in util.fastq_iter(f):
+      _bcode = e[0]
+      if _bcode != bcode:
         break
       yield e
 
