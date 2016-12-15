@@ -51,6 +51,11 @@ class Options(object):
     @classproperty
     def optional(self):
       return [
+        (
+          'phasing_args', {
+            'K' : 10,
+          },
+        )
       ]
 
     def __init__(self, options_path, **kwdargs):

@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 from collections import defaultdict
 import shutil
@@ -38,13 +39,26 @@ class PhaseBarcodesStep(StepChunk):
     )
     util.mkdir_p(scratch_path)
 
-    self.logger.log('phasing barcodes')
+    bcode_whitelist = None
+    if 'bcode_whitelist_path' in self.options.phasing_args:
+      try:
+        whitelist_path = self.options.phasing_args['bcode_whitelist_path']
+        bcode_whitelist = util.load_pickle(whitelist_path)
+        self.logger.log("using barcode whitelist of {} barcodes".format(
+          len(bcode_whitelist)))
+      except:
+        self.logger.error('malformed barcode whitelist pickle file {}'.format(whitelist_path))
+        sys.exit(1)
+
+    K = self.options.phasing_args['K']
+    self.logger.log("phasing barcodes for K = {} haps".format(K))
     clusters_map = phase_barcodes(
       self.options.bam_path,
       self.options.vcf_path,
-      scratch_path=scratch_path,
+      scratch_path,
+      K=K,
+      bcodes=bcode_whitelist,
     )
     self.logger.log('  - done')
     util.write_pickle(self.options.phased_bins_path, clusters_map)
       
-
