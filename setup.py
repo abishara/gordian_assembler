@@ -11,10 +11,7 @@ setup(
   },
   install_requires=[
     'ipython-cluster-helper>=0.5.2',
-    'scipy>=0.18',
-    'numpy>=1.11.0',
     'pysam>=0.9',
-    'PyVCF',
   ],
   author='Alex Bishara',
   description='athena assembler',
