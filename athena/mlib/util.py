@@ -79,6 +79,7 @@ def grouped(iterator, lines_per_read):
 def fastq_iter(f):
   for lines in grouped(f, 4):
     qname, bcode = lines[0].strip().split()
+    bcode = bcode.split(':')[-1]
     yield bcode, qname, lines
   raise StopIteration
 

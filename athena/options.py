@@ -115,7 +115,7 @@ class Options(object):
 
     @property
     def phased_bins_path(self):
-        return os.path.join(self.results_dir, "phased_bins.p")
+        return os.path.join(self.results_dir, "clusters.p")
 
     def get_bin_scratch(self, idx):
       return os.path.join(self.working_dir, 'c{}'.format(idx))
