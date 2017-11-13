@@ -3,14 +3,14 @@ import sys
 import collections
 import logging
 
-from athena.mlib import util
+from gordian.mlib import util
 
-from athena import pipeline
-from athena.options import Options
+from gordian import pipeline
+from gordian.options import Options
 
-from athena.stages import index_reads
-from athena.stages import phase_barcodes
-from athena.stages import assemble_bins
+from gordian.stages import index_reads
+from gordian.stages import phase_barcodes
+from gordian.stages import assemble_bins
 
 logging.basicConfig(format='%(message)s', level=logging.DEBUG)
 
@@ -69,7 +69,7 @@ def main():
   """
 
   help_str = '''
-  usage: athena.py <path/to/config.json>
+  usage: gordian.py <path/to/config.json>
 
   NOTE: dirname(config.json) specifies root output directory
   '''
