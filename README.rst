@@ -10,12 +10,12 @@ will soon be updated with easy to use instructions.
 Installation
 ============
 
-The Gordian Assembler depends on the `phaser <https://github.com/abishara/phaser` library, which must first be
+The Gordian Assembler depends on the `phaser <https://github.com/abishara/phaser>`_ library, which must first be
 installed.
 
 The following prerequisites must also be installed:
 
-* `idba_ud <https://github.com/abishara/idba/releases/tag/1.1.3a1>`_ -- please use **this** version, which is modified both to handle longer short-read lengths and to locally assemble subsampled barcoded reads clouds.  Ensure all compiled binaries, including ``idba_subasm``, are in your ``$PATH``
+* `idba_ud <https://github.com/abishara/idba/releases/tag/1.1.3a1>`_ -- please use **this** version, which is modified both to handle longer short-read lengths and to locally assemble subsampled barcoded reads clouds.  Ensure all compiled binaries are in your ``$PATH``
 
 
 Troubleshooting
