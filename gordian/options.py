@@ -2,7 +2,7 @@ import abc
 import os
 import json
 
-from athena.mlib import util
+from gordian.mlib import util
 
 class classproperty(object):
     def __init__(self, f):

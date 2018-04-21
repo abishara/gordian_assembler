@@ -1,6 +1,6 @@
 import logging
 
-from athena import cluster
+from gordian import cluster
 
 def make_cluster(cluster_settings, processes):
     cluster_classes = {"IPCluster":cluster.IPCluster,
