@@ -66,7 +66,7 @@ class AssembleBinsStep(StepChunk):
       assert self.bcodes.issubset(seen_set), 'not all barcodes loaded'
 
     # run idba
-    cmd = '{} -r {} -o {}'.format(
+    cmd = '{} --num_threads 2 -r {} -o {}'.format(
       idbabin_path,
       readsfa_path,
       asmdir_path,

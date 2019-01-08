@@ -50,13 +50,11 @@ class PhaseBarcodesStep(StepChunk):
         self.logger.error('malformed barcode whitelist pickle file {}'.format(whitelist_path))
         sys.exit(1)
 
-    K = self.options.phasing_args['K']
-    self.logger.log("phasing barcodes for K = {} haps".format(K))
+    self.logger.log("phasing barcodes")
     clusters_map = phase_barcodes(
       self.options.bam_path,
       self.options.vcf_path,
       scratch_path,
-      K=K,
       bcodes=bcode_whitelist,
     )
     self.logger.log('  - done')
